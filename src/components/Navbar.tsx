@@ -23,10 +23,10 @@ const Navbar: FC = () => {
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      setSearch("");
       navigate("/search", {
         state: { title: `What we found for ${search}`, query: search },
       });
+      setSearch("");
     }
   };
 

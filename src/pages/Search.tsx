@@ -1,45 +1,51 @@
 import { FC, useEffect, useState } from "react";
-import { Box, Button, Container, Typography } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import { getByQuery } from "../utils/api";
 import { NewsType } from "../utils/types";
 import ExploreCardsList from "../components/ExploreCardsList";
 import NewsCardSkeleton from "../components/Skeletons/NewsCardSkeleton";
+import allNews from "../utils/newsByCategory.json";
 
 const Search: FC = () => {
   const [searchedData, setSearchedData] = useState<NewsType[]>([]);
-  const [pageNo, setPageNo] = useState<number>(1);
 
   const location = useLocation();
   const { title, query } = location.state;
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>("");
 
   const fetchSearch = async () => {
-    setError(null);
     setLoading(true);
-    const response = await getByQuery(query, pageNo);
 
-    if (response.data) {
-      const filteredNews = response.data?.articles.filter(
-        (res: NewsType) => res.urlToImage != null
-      );
+    const allNewsArticles = [];
+    for (const category in allNews) {
+      // @ts-expect-error: Issue with the type
+      const articles = allNews[category].articles;
 
-      setSearchedData((prev) => [...prev, ...filteredNews]);
-      setPageNo((prev) => prev + 1);
-      setLoading(false);
+      // Loop through each article
+      for (const article of articles) {
+        allNewsArticles.push(article);
+      }
     }
 
-    if (response.error) {
-      setError(response.error.message || "Failed To Fetch Data");
-      setLoading(false);
-    }
+    console.log(allNewsArticles);
+
+    allNewsArticles.map((article) => {
+      if (
+        article.title?.toLowerCase().includes(query.toLowerCase()) ||
+        article.description?.toLowerCase().includes(query.toLowerCase())
+      ) {
+        setSearchedData((prev) => [...prev, article]);
+      }
+    });
+
+    setLoading(false);
   };
 
   useEffect(() => {
     setSearchedData([]);
     fetchSearch();
+    // eslint-disable-next-line
   }, [query]);
 
   return (
@@ -56,16 +62,8 @@ const Search: FC = () => {
         {title}
       </Typography>
 
-      {error && (
-        <Typography color="error" mb={3}>
-          {error}
-        </Typography>
-      )}
-
       <>
-        {searchedData.length > 0 ? (
-          <ExploreCardsList loading={loading} list={searchedData} />
-        ) : (
+        {loading && (
           <Box className="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-3">
             {[...Array(20)].map((_, index) => (
               <NewsCardSkeleton key={index} />
@@ -73,7 +71,13 @@ const Search: FC = () => {
           </Box>
         )}
 
-        <Box display="flex" justifyContent="center" mt={3}>
+        {searchedData.length > 0 ? (
+          <ExploreCardsList loading={loading} list={searchedData} />
+        ) : (
+          <Box className="text-red-600">No results found for "{query}"</Box>
+        )}
+
+        {/* <Box display="flex" justifyContent="center" mt={3}>
           <Button
             variant="contained"
             disableElevation
@@ -82,7 +86,7 @@ const Search: FC = () => {
           >
             Load More
           </Button>
-        </Box>
+        </Box> */}
       </>
     </Container>
   );

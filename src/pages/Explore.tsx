@@ -2,12 +2,12 @@ import { FC, useEffect, useState } from "react";
 import { Box, Button, Container, Typography } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { NewsType } from "../utils/types";
-import { getTopHeadLines } from "../utils/api";
 import ExploreCardsList from "../components/ExploreCardsList";
 import NewsCardSkeleton from "../components/Skeletons/NewsCardSkeleton";
+import newsByCategory from "../utils/newsByCategory.json";
 
 interface categoryDataType {
-  [key: string]: { articles: NewsType[]; pageNo: number };
+  [key: string]: { articles: NewsType[] };
 }
 
 const Explore: FC = () => {
@@ -15,98 +15,95 @@ const Explore: FC = () => {
   const category = location.state?.category;
 
   const [categoryData, setCategoryData] = useState<categoryDataType>({});
-  const [hiddenData, setHiddenData] = useState<categoryDataType>({});
   const [loadMore, setLoadMore] = useState<boolean>(true);
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>("");
 
   const fetchNews = async () => {
-    setError(null);
     setLoading(true);
-    const currentCategorydata = categoryData[category] || {
-      articles: [],
-      pageNo: 1,
-    };
-    const hiddenCategorydata = hiddenData[category] || {
-      articles: [],
-      pageNo: 1,
-    };
-    const pageNo = currentCategorydata.pageNo;
 
     if (!category) return;
+    let finalNews = [];
+    // @ts-expect-error: Issue with the type
+    const filteredNews = newsByCategory[category].articles;
 
-    const response = await getTopHeadLines(category, pageNo);
-
-    if (response.data) {
-      const filteredNews = response.data?.articles.filter(
-        (res: NewsType) => res.urlToImage != null
-      );
-
-      setCategoryData((prevData) => ({
-        ...prevData,
-        [category]: {
-          articles: [...(prevData[category]?.articles || []), ...filteredNews],
-          pageNo: pageNo + 1,
-        },
-      }));
-
-      const hiddenNews = response.data?.articles.filter(
-        (res: NewsType) => res.urlToImage == null
-      );
-
-      setHiddenData((prevData) => ({
-        ...prevData,
-        [category]: {
-          articles: [...(prevData[category]?.articles || []), ...hiddenNews],
-        },
-      }));
-
-      localStorage.setItem(
-        "categoryData",
-        JSON.stringify({
-          ...categoryData,
-          [category]: {
-            articles: [
-              ...(categoryData[category]?.articles || []),
-              ...filteredNews,
-            ],
-          },
-        })
-      );
-
-      setLoadMore(
-        currentCategorydata.articles.length +
-          filteredNews.length +
-          hiddenCategorydata?.articles.length <=
-          response.data.totalResults - 5
-      );
-
-      setLoading(false);
+    if (
+      filteredNews.length <= 20 &&
+      categoryData[category]?.articles?.length === undefined
+    ) {
+      finalNews = filteredNews.slice(0, filteredNews.length);
+    } else if (
+      filteredNews.length > 20 &&
+      categoryData[category]?.articles?.length === undefined
+    ) {
+      finalNews = filteredNews.slice(0, 19);
+    } else if (
+      filteredNews.length > 20 &&
+      filteredNews.length <= 40 &&
+      categoryData[category]?.articles?.length > 0 &&
+      categoryData[category]?.articles?.length < 20
+    ) {
+      finalNews = filteredNews.slice(20, filteredNews.length);
+    } else if (
+      filteredNews.length > 40 &&
+      categoryData[category]?.articles?.length > 0 &&
+      categoryData[category]?.articles?.length < 20
+    ) {
+      finalNews = filteredNews.slice(20, 39);
+    } else if (
+      filteredNews.length > 40 &&
+      filteredNews.length <= 60 &&
+      categoryData[category]?.articles?.length > 20 &&
+      categoryData[category]?.articles?.length < 40
+    ) {
+      finalNews = filteredNews.slice(40, filteredNews.length);
+    } else if (
+      filteredNews.length > 60 &&
+      categoryData[category]?.articles?.length > 20 &&
+      categoryData[category]?.articles?.length < 40
+    ) {
+      finalNews = filteredNews.slice(40, 59);
+    } else if (
+      filteredNews.length > 60 &&
+      filteredNews.length <= 80 &&
+      categoryData[category]?.articles?.length > 40 &&
+      categoryData[category]?.articles?.length < 60
+    ) {
+      finalNews = filteredNews.slice(60, filteredNews.length);
+    } else if (
+      filteredNews.length > 80 &&
+      categoryData[category]?.articles?.length > 40 &&
+      categoryData[category]?.articles?.length < 60
+    ) {
+      finalNews = filteredNews.slice(60, 79);
+    } else {
+      finalNews = filteredNews;
     }
 
-    if (response.error) {
-      const storedCategoryData = localStorage.getItem("categoryData");
-      // @ts-expect-error: Issue with the type
-      const parsedCategoryData = JSON.parse(storedCategoryData);
-      const localStorageCategoryData = parsedCategoryData || [];
+    setCategoryData((prevData) => ({
+      ...prevData,
+      [category]: {
+        articles: [...(prevData[category]?.articles || []), ...finalNews],
+      },
+    }));
 
-      if (Object.keys(localStorageCategoryData).length > 0) {
-        setCategoryData(localStorageCategoryData);
-        setLoading(false);
-        setLoadMore(false);
-      } else {
-        setError(response.error.message || "Failed To Fetch Data");
-        setLoading(false);
-      }
-    }
+    setLoading(false);
   };
 
   useEffect(() => {
+    setCategoryData({});
     fetchNews();
+    // eslint-disable-next-line
   }, [category]);
 
-  console.log(categoryData);
+  useEffect(() => {
+    // @ts-expect-error: Issue with the type
+    const filteredNews = newsByCategory[category].articles;
+    setLoadMore(
+      categoryData[category]?.articles.length < filteredNews.length - 5 ||
+        isNaN(categoryData[category]?.articles.length)
+    );
+  }, [category, categoryData]);
 
   return (
     <Container maxWidth={false} sx={{ width: "90%", mt: 5, mb: 10 }}>
@@ -121,12 +118,6 @@ const Explore: FC = () => {
       >
         {category}
       </Typography>
-
-      {error && (
-        <Typography color="error" mb={3}>
-          {error}
-        </Typography>
-      )}
 
       <>
         {categoryData[category]?.articles?.length > 0 ? (
