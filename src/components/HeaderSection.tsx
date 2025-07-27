@@ -11,6 +11,9 @@ interface HeaderSectionProps {
 const HeaderSection: FC<HeaderSectionProps> = ({ title }) => {
   const navigate = useNavigate();
 
+  const finalTitle =
+    title.toLowerCase() === "top headlines" ? "General" : title;
+
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
@@ -36,7 +39,9 @@ const HeaderSection: FC<HeaderSectionProps> = ({ title }) => {
               bgcolor: "transparent",
             },
           }}
-          onClick={() => navigate("/explore", { state: { category: title } })}
+          onClick={() =>
+            navigate("/explore", { state: { category: finalTitle } })
+          }
         >
           See All{" "}
           <ArrowForwardIcon sx={{ fontSize: { md: "1.25rem", xs: "1rem" } }} />

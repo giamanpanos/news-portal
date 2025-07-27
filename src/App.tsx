@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Explore from "./pages/Explore";
 import Search from "./pages/Search";
 import NotFound from "./pages/NotFound";
+import ScrollToTop from "./utils/scrollToTop";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Box>
         <BrowserRouter>
           <Navbar />
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/explore" element={<Explore />} />
