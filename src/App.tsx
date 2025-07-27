@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Explore from "./pages/Explore";
 import Search from "./pages/Search";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/search" element={<Search />} />
+            {/* 404 Fallback */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </Box>
